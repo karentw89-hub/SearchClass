@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代課查詢系統</title>
+<style>
+  :root{
+    --paper:#F6F4EE;
+    --ink:#1F2A24;
+    --line:#D8D2C2;
+    --pine:#2F4B3C;
+    --pine-deep:#1E332A;
+    --clay:#B4562E;
+    --clay-soft:#F0DDCC;
+    --free:#3E6B52;
+    --free-bg:#E4EEE6;
+    --busy:#9A9280;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif;
+    line-height:1.6;
+    padding:40px 20px 80px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+
+  header{
+    border-bottom:2px solid var(--pine);
+    padding-bottom:18px;
+    margin-bottom:34px;
+  }
+  header .kicker{
+    font-family: "Noto Sans TC", sans-serif;
+    font-size:13px;
+    letter-spacing:0.08em;
+    color:var(--clay);
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:30px;
+    margin:0 0 6px;
+    font-weight:700;
+    color:var(--pine-deep);
+  }
+  header p{
+    font-family: "Noto Sans TC", sans-serif;
+    font-size:14.5px;
+    color:#4B5750;
+    margin:0;
+    max-width:60ch;
+  }
+
+  .panel{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:28px 30px;
+    margin-bottom:30px;
+  }
+
+  .field-grid{
+    display:grid;
+    grid-template-columns: 1.3fr 1fr 0.9fr 0.9fr;
+    gap:20px;
+    align-items:end;
+  }
+  @media (max-width: 700px){
+    .field-grid{grid-template-columns: 1fr 1fr;}
+  }
+  label{
+    display:block;
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:12.5px;
+    color:var(--pine-deep);
+    margin-bottom:7px;
+    font-weight:600;
+  }
+  select, input[type=time]{
+    width:100%;
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:15px;
+    padding:9px 10px;
+    border:1px solid #B7B09D;
+    border-radius:2px;
+    background:#FDFCF9;
+    color:var(--ink);
+  }
+  select:focus, input:focus{
+    outline:2px solid var(--pine);
+    outline-offset:1px;
+  }
+
+  .btn{
+    grid-column: 1 / -1;
+    margin-top:6px;
+    background:var(--pine);
+    color:#fff;
+    border:none;
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:15px;
+    font-weight:600;
+    padding:13px 18px;
+    border-radius:2px;
+    cursor:pointer;
+    letter-spacing:0.02em;
+  }
+  .btn:hover{background:var(--pine-deep);}
+  .btn:active{transform:translateY(1px);}
+
+  #result{display:none;}
+
+  .summary{
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:14px;
+    color:#4B5750;
+    margin-bottom:22px;
+    padding:14px 18px;
+    border-left:3px solid var(--clay);
+    background:var(--clay-soft);
+  }
+  .summary b{color:var(--pine-deep);}
+
+  .empty-msg{
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:15px;
+    color:#4B5750;
+    padding:18px;
+    border:1px dashed var(--line);
+    text-align:center;
+  }
+
+  .period-card{
+    border:1px solid var(--line);
+    border-radius:2px;
+    margin-bottom:16px;
+    overflow:hidden;
+  }
+  .period-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    background:var(--pine-deep);
+    color:#F1EEE4;
+    padding:10px 18px;
+    font-family:"Noto Sans TC", sans-serif;
+  }
+  .period-head .p-name{font-size:15.5px; font-weight:700; letter-spacing:0.03em;}
+  .period-head .p-time{font-size:13px; opacity:0.85;}
+
+  .period-body{padding:16px 18px 18px;}
+
+  .need-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:8px 0;
+    border-bottom:1px solid #EFECE1;
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:14.5px;
+  }
+  .need-row:last-of-type{border-bottom:none;}
+  .tag-class{
+    background:var(--clay);
+    color:#fff;
+    font-size:12px;
+    padding:2px 9px;
+    border-radius:20px;
+    flex-shrink:0;
+  }
+  .need-row .subject{font-weight:600; color:var(--pine-deep);}
+  .need-row .orig{color:#6B6355; font-size:13.5px;}
+
+  .sub-block{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+  }
+  .sub-label{
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:12.5px;
+    color:#6B6355;
+    margin-bottom:8px;
+  }
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:13.5px;
+    padding:5px 12px;
+    border-radius:20px;
+    background:var(--free-bg);
+    color:var(--free);
+    border:1px solid #C7DBCC;
+  }
+  .chip.none{
+    background:#F4EDE9;
+    color:var(--busy);
+    border:1px solid var(--line);
+  }
+
+  footer{
+    margin-top:40px;
+    font-family:"Noto Sans TC", sans-serif;
+    font-size:12px;
+    color:#8B8474;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">校務行政・代課安排</div>
+    <h1>代課查詢系統</h1>
+    <p>輸入請假教師與請假時段，系統會依 115 學年度排課表，列出該時段內需要代課的節次與班級，並找出當節有空堂、可協助代課的老師。</p>
+  </header>
+
+  <div class="panel">
+    <div class="field-grid">
+      <div>
+        <label for="teacher">請假教師</label>
+        <select id="teacher"></select>
+      </div>
+      <div>
+        <label for="day">請假星期</label>
+        <select id="day">
+          <option value="一">星期一</option>
+          <option value="二">星期二</option>
+          <option value="三">星期三</option>
+          <option value="四">星期四</option>
+          <option value="五">星期五</option>
+        </select>
+      </div>
+      <div>
+        <label for="start">請假起</label>
+        <input type="time" id="start" value="08:30">
+      </div>
+      <div>
+        <label for="end">請假迄</label>
+        <input type="time" id="end" value="12:00">
+      </div>
+      <button class="btn" onclick="runQuery()">查詢代課需求</button>
+    </div>
+  </div>
+
+  <div id="result">
+    <div class="summary" id="summaryBox"></div>
+    <div id="cards"></div>
+  </div>
+
+  <footer>資料來源：115排課表（07:30~08:30 早自習、12:00~12:55 午休、第1~7節）。如遇聯課、社團、技藝班等混班課程，請另行確認實際帶班教師。</footer>
+</div>
+
+<script>
+const DATA = {"schedule": {"一": {"1": [{"class": "國一", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國二", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國三", "subject": "理化", "teachers": [{"name": "曾忻萍", "external": false}]}], "2": [{"class": "國一", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國二", "subject": "英文", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國三", "subject": "生美", "teachers": [{"name": "黃嘉興", "external": false}, {"name": "伍育賢", "external": false}]}], "3": [{"class": "國一", "subject": "英文", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國二", "subject": "理化", "teachers": [{"name": "曾忻萍", "external": false}]}, {"class": "國三", "subject": "美術", "teachers": [{"name": "黃嘉興", "external": false}, {"name": "伍育賢", "external": false}]}], "4": [{"class": "國一", "subject": "生物", "teachers": [{"name": "曾忻萍", "external": false}]}, {"class": "國二", "subject": "生美", "teachers": [{"name": "黃嘉興", "external": false}, {"name": "伍育賢", "external": false}]}, {"class": "國三", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}], "5": [{"class": "國一", "subject": "歷史", "teachers": [{"name": "張睿軒", "external": false}]}, {"class": "國二", "subject": "生美", "teachers": [{"name": "黃嘉興", "external": false}, {"name": "伍育賢", "external": false}]}, {"class": "國三", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}], "6": [{"class": "國一", "subject": "生美", "teachers": [{"name": "黃嘉興", "external": false}, {"name": "伍育賢", "external": false}]}, {"class": "國二", "subject": "公民", "teachers": [{"name": "張睿軒", "external": false}]}, {"class": "國三", "subject": "英文", "teachers": [{"name": "高國原", "external": false}]}], "7": [{"class": "國一", "subject": "生美", "teachers": [{"name": "黃嘉興", "external": false}, {"name": "伍育賢", "external": false}]}, {"class": "國二", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國三", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}]}, "二": {"1": [{"class": "國一", "subject": "表藝", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國二", "subject": "英文", "teachers": [{"name": "高國原", "external": true}]}, {"class": "國三", "subject": "公民", "teachers": [{"name": "張睿軒", "external": false}]}], "2": [{"class": "國一", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國二", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國三", "subject": "英文", "teachers": [{"name": "高國原", "external": true}]}], "3": [{"class": "國一", "subject": "英文", "teachers": [{"name": "高國原", "external": true}]}, {"class": "國二", "subject": "音樂", "teachers": [{"name": "傅筱芸", "external": false}]}, {"class": "國三", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}], "4": [{"class": "國一", "subject": "地理", "teachers": [{"name": "張睿軒", "external": false}]}, {"class": "國二", "subject": "輔導", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國三", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}], "5": [{"class": "國一", "subject": "體育", "teachers": [{"name": "黃嘉興", "external": false}]}, {"class": "國二", "subject": "理化", "teachers": [{"name": "曾忻萍", "external": false}]}, {"class": "國三", "subject": "社團", "teachers": [{"name": "伍育賢", "external": false}]}], "6": [{"class": "國一", "subject": "社團", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國二", "subject": "體育", "teachers": [{"name": "黃嘉興", "external": false}]}, {"class": "國三", "subject": "理化", "teachers": [{"name": "曾忻萍", "external": false}]}], "7": [{"class": "國一", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國二", "subject": "社團", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國三", "subject": "體育", "teachers": [{"name": "黃嘉興", "external": false}]}]}, "三": {"1": [{"class": "國一", "subject": "生物", "teachers": [{"name": "曾忻萍", "external": false}]}, {"class": "國二", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國三", "subject": "童軍", "teachers": [{"name": "高國原", "external": false}]}], "2": [{"class": "國一", "subject": "生科", "teachers": [{"name": "秦季平", "external": false}]}, {"class": "國二", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國三", "subject": "歷史", "teachers": [{"name": "張睿軒", "external": false}]}], "3": [{"class": "國一", "subject": "閩語", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國二", "subject": "閩語", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國三", "subject": "生科", "teachers": [{"name": "秦季平", "external": false}]}], "4": [{"class": "國一", "subject": "公民", "teachers": [{"name": "張睿軒", "external": false}]}, {"class": "國二", "subject": "生科", "teachers": [{"name": "秦季平", "external": false}]}, {"class": "國三", "subject": "班週會", "teachers": [{"name": "曾忻萍", "external": false}]}], "5": [{"class": "國一", "subject": "童軍", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國二", "subject": "美術", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國三", "subject": "技藝班", "teachers": [{"name": "曾忻萍", "external": false}]}], "6": [{"class": "國一", "subject": "音樂", "teachers": [{"name": "傅筱芸", "external": false}]}, {"class": "國二", "subject": "童軍", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國三", "subject": "技藝班", "teachers": [{"name": "曾忻萍", "external": false}]}], "7": [{"class": "國一", "subject": "美術", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國二", "subject": "食農", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國三", "subject": "技藝班", "teachers": [{"name": "曾忻萍", "external": false}]}]}, "四": {"1": [{"class": "國一", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國二", "subject": "英文", "teachers": [{"name": "高國原", "external": true}]}, {"class": "國三", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}], "2": [{"class": "國一", "subject": "生物", "teachers": [{"name": "曾忻萍", "external": false}]}, {"class": "國二", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國三", "subject": "英文", "teachers": [{"name": "高國原", "external": true}]}], "3": [{"class": "國一", "subject": "英文", "teachers": [{"name": "高國原", "external": true}]}, {"class": "國二", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國三", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}], "4": [{"class": "國一", "subject": "輔導", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國二", "subject": "地理", "teachers": [{"name": "張睿軒", "external": false}]}, {"class": "國三", "subject": "音樂", "teachers": [{"name": "傅筱芸", "external": false}]}], "5": [{"class": "國一", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國二", "subject": "理化", "teachers": [{"name": "曾忻萍", "external": false}]}, {"class": "國三", "subject": "資科", "teachers": [{"name": "秦季平", "external": false}]}], "6": [{"class": "國一", "subject": "食農", "teachers": [{"name": "曾忻萍", "external": false}]}, {"class": "國二", "subject": "資科", "teachers": [{"name": "秦季平", "external": false}]}, {"class": "國三", "subject": "表藝", "teachers": [{"name": "伍育賢", "external": false}]}], "7": [{"class": "國一", "subject": "資科", "teachers": [{"name": "秦季平", "external": false}]}, {"class": "國二", "subject": "食農", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國三", "subject": "輔導", "teachers": [{"name": "伍育賢", "external": false}]}]}, "五": {"1": [{"class": "國一", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國二", "subject": "健康", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國三", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}], "2": [{"class": "國一", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國二", "subject": "表藝", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國三", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}], "3": [{"class": "國一", "subject": "食農", "teachers": [{"name": "曾忻萍", "external": false}]}, {"class": "國二", "subject": "國文", "teachers": [{"name": "方月蓮", "external": false}]}, {"class": "國三", "subject": "健康", "teachers": [{"name": "高國原", "external": false}]}], "4": [{"class": "國一", "subject": "健康", "teachers": [{"name": "高國原", "external": false}]}, {"class": "國二", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國三", "subject": "理化", "teachers": [{"name": "曾忻萍", "external": false}]}], "5": [{"class": "國一", "subject": "體育", "teachers": [{"name": "黃嘉興", "external": false}]}, {"class": "國二", "subject": "家政", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國三", "subject": "地理", "teachers": [{"name": "張睿軒", "external": false}]}], "6": [{"class": "國一", "subject": "數學", "teachers": [{"name": "陳美珍", "external": false}]}, {"class": "國二", "subject": "體育", "teachers": [{"name": "黃嘉興", "external": false}]}, {"class": "國三", "subject": "家政", "teachers": [{"name": "伍育賢", "external": false}]}], "7": [{"class": "國一", "subject": "家政", "teachers": [{"name": "伍育賢", "external": false}]}, {"class": "國二", "subject": "歷史", "teachers": [{"name": "張睿軒", "external": false}]}, {"class": "國三", "subject": "體育", "teachers": [{"name": "黃嘉興", "external": false}]}]}}, "teachers": ["伍育賢", "傅筱芸", "張睿軒", "方月蓮", "曾忻萍", "秦季平", "陳美珍", "高國原", "黃嘉興"], "periods": [{"period": 1, "start": "08:30", "end": "09:15"}, {"period": 2, "start": "09:25", "end": "10:10"}, {"period": 3, "start": "10:20", "end": "11:05"}, {"period": 4, "start": "11:15", "end": "12:00"}, {"period": 5, "start": "13:00", "end": "13:45"}, {"period": 6, "start": "13:55", "end": "14:40"}, {"period": 7, "start": "14:55", "end": "15:40"}]};
+
+const teacherSelect = document.getElementById('teacher');
+DATA.teachers.forEach(t => {
+  const opt = document.createElement('option');
+  opt.value = t; opt.textContent = t;
+  teacherSelect.appendChild(opt);
+});
+
+function toMinutes(hhmm){
+  const [h,m] = hhmm.split(':').map(Number);
+  return h*60+m;
+}
+
+function overlaps(aStart,aEnd,bStart,bEnd){
+  return aStart < bEnd && bStart < aEnd;
+}
+
+function runQuery(){
+  const teacher = teacherSelect.value;
+  const day = document.getElementById('day').value;
+  const start = document.getElementById('start').value;
+  const end = document.getElementById('end').value;
+
+  const resultBox = document.getElementById('result');
+  const summaryBox = document.getElementById('summaryBox');
+  const cardsBox = document.getElementById('cards');
+  cardsBox.innerHTML = '';
+  resultBox.style.display = 'block';
+
+  if(!start || !end || toMinutes(end) <= toMinutes(start)){
+    summaryBox.innerHTML = '請確認請假迄時間須晚於請假起時間。';
+    return;
+  }
+
+  const reqStart = toMinutes(start);
+  const reqEnd = toMinutes(end);
+
+  const dayLabel = {'一':'星期一','二':'星期二','三':'星期三','四':'星期四','五':'星期五'}[day];
+
+  const affected = [];
+
+  DATA.periods.forEach(p => {
+    const pStart = toMinutes(p.start);
+    const pEnd = toMinutes(p.end);
+    if(!overlaps(reqStart, reqEnd, pStart, pEnd)) return;
+
+    const entries = DATA.schedule[day][String(p.period)];
+    const needs = entries.filter(e => e.teachers.some(t => t.name === teacher));
+    if(needs.length === 0) return;
+
+    // teachers already assigned this period (any class)
+    const busy = new Set();
+    entries.forEach(e => e.teachers.forEach(t => busy.add(t.name)));
+
+    const free = DATA.teachers.filter(t => t !== teacher && !busy.has(t));
+
+    affected.push({period: p, needs, free});
+  });
+
+  if(affected.length === 0){
+    summaryBox.innerHTML = `<b>${teacher}</b> 老師於 ${dayLabel} ${start}~${end} 這段時間沒有排課，不需要安排代課。`;
+    cardsBox.innerHTML = '';
+    return;
+  }
+
+  const totalNeeds = affected.reduce((sum,a) => sum + a.needs.length, 0);
+  summaryBox.innerHTML = `<b>${teacher}</b> 老師請假時段：${dayLabel} ${start}~${end}，共影響 <b>${affected.length}</b> 節、<b>${totalNeeds}</b> 個班級課程，需要安排代課。`;
+
+  affected.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'period-card';
+
+    const head = document.createElement('div');
+    head.className = 'period-head';
+    head.innerHTML = `<span class="p-name">第${a.period.period}節</span><span class="p-time">${a.period.start}～${a.period.end}</span>`;
+    card.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'period-body';
+
+    a.needs.forEach(n => {
+      const row = document.createElement('div');
+      row.className = 'need-row';
+      row.innerHTML = `<span class="tag-class">${n.class}</span><span class="subject">${n.subject}</span><span class="orig">原授課：${teacher}</span>`;
+      body.appendChild(row);
+    });
+
+    const subBlock = document.createElement('div');
+    subBlock.className = 'sub-block';
+    const subLabel = document.createElement('div');
+    subLabel.className = 'sub-label';
+    subLabel.textContent = '本節可代課教師（該節無課）';
+    subBlock.appendChild(subLabel);
+
+    const chipRow = document.createElement('div');
+    chipRow.className = 'chip-row';
+    if(a.free.length === 0){
+      const chip = document.createElement('span');
+      chip.className = 'chip none';
+      chip.textContent = '本節全體教師皆有課，請考慮跨節調課或行政支援';
+      chipRow.appendChild(chip);
+    } else {
+      a.free.forEach(name => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = name;
+        chipRow.appendChild(chip);
+      });
+    }
+    subBlock.appendChild(chipRow);
+    body.appendChild(subBlock);
+
+    card.appendChild(body);
+    cardsBox.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
