@@ -220,6 +220,8 @@
   /* ---- Schedule browser ---- */
   .tabs{
     display:flex;
+    flex-wrap:wrap;
+    align-items:flex-start;
     gap:8px;
     margin-bottom:18px;
     font-family:"Noto Sans TC", sans-serif;
@@ -238,6 +240,54 @@
     background:var(--pine);
     border-color:var(--pine);
     color:#fff;
+  }
+
+  /* 現在時間小方塊（總表右上） */
+  .now-box{
+    margin-left:auto;
+    border:1px solid var(--line);
+    border-left:3px solid var(--clay);
+    background:#FDFCF9;
+    border-radius:3px;
+    padding:5px 10px;
+    font-size:12px;
+    line-height:1.5;
+    min-width:136px;
+  }
+  .now-head{
+    color:#6B6355;
+    font-size:11.5px;
+    margin-bottom:2px;
+  }
+  .now-head b{
+    color:var(--pine-deep);
+    font-size:14px;
+    margin-left:4px;
+    font-variant-numeric:tabular-nums;
+  }
+  .now-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .now-tag{
+    font-size:10px;
+    font-weight:700;
+    color:#3B3B33;
+    padding:0 6px;
+    border-radius:10px;
+    width:32px;
+    text-align:center;
+    flex-shrink:0;
+  }
+  .now-subject{
+    font-weight:600;
+    color:var(--pine-deep);
+    white-space:nowrap;
+  }
+  .now-status{
+    color:#8B8474;
+    white-space:nowrap;
   }
 
   .view-controls{
@@ -511,6 +561,7 @@
       <button class="tab-btn active" id="tabAllBtn" onclick="switchTab('all')">總表</button>
       <button class="tab-btn" id="tabClassBtn" onclick="switchTab('class')">依班級</button>
       <button class="tab-btn" id="tabTeacherBtn" onclick="switchTab('teacher')">依老師</button>
+      <div class="now-box" id="nowBox"></div>
     </div>
     <div class="view-controls">
       <div id="classPicker" style="display:none;">
@@ -693,6 +744,7 @@ function switchTab(tab){
   document.getElementById('tabTeacherBtn').classList.toggle('active', tab === 'teacher');
   document.getElementById('classPicker').style.display = tab === 'class' ? 'block' : 'none';
   document.getElementById('teacherPicker').style.display = tab === 'teacher' ? 'block' : 'none';
+  document.getElementById('nowBox').style.display = tab === 'all' ? 'block' : 'none';
   renderScheduleTable();
 }
 
@@ -835,6 +887,52 @@ function closeModal(){
 document.getElementById('cellModal').addEventListener('click', (e) => {
   if(e.target.id === 'cellModal') closeModal();
 });
+
+/* ---------- 現在時間：三個班目前在上什麼課 ---------- */
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function updateNow(){
+  const now = new Date();
+  const dayKey = DAYS[now.getDay() - 1]; // 週日=0、週六=6 時為 undefined
+  const mins = now.getHours()*60 + now.getMinutes();
+  const hhmm = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  const dayText = ['日','一','二','三','四','五','六'][now.getDay()];
+
+  let period = null;
+  let status = '';
+  if(!dayKey){
+    status = '假日';
+  } else {
+    period = DATA.periods.find(p => mins >= toMinutes(p.start) && mins < toMinutes(p.end)) || null;
+    if(!period){
+      if(mins < toMinutes('07:30')) status = '尚未到校';
+      else if(mins < toMinutes('08:30')) status = '早自習';
+      else if(mins >= toMinutes('12:00') && mins < toMinutes('12:55')) status = '午休';
+      else if(mins >= toMinutes('15:40')) status = '已放學';
+      else status = '下課';
+    }
+  }
+
+  const rows = CLASSES.map(cls => {
+    let text;
+    if(period){
+      const entry = DATA.schedule[dayKey][String(period.period)].find(e => e.class === cls);
+      text = entry
+        ? `<span class="now-subject">${entry.subject}</span>`
+        : `<span class="now-status">無課</span>`;
+    } else {
+      text = `<span class="now-status">${status}</span>`;
+    }
+    return `<div class="now-row"><span class="now-tag" style="background:${classColor(cls)};">${cls}</span>${text}</div>`;
+  }).join('');
+
+  const periodText = period ? `・第${period.period}節` : '';
+  document.getElementById('nowBox').innerHTML =
+    `<div class="now-head">週${dayText}${periodText}<b>${hhmm}</b></div>${rows}`;
+}
+
+updateNow();
+setInterval(updateNow, 15000);
 
 renderScheduleTable();
 </script>
